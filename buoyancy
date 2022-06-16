@@ -1,0 +1,75 @@
+dw = 1; %m/s, similar to what I used in previous homework, but value just chosen not given
+n = 0.01; %instructions sat N = 0.01s^-1, but using N for # modes, so using lowercase n here
+L = 300e3;
+D = 15e3;
+b = 10e3;
+d = 1e3;
+%d = 1e2; %decreasing d
+%d = 1e4; %increasing d
+zo = 7e3;
+%t = 7200;
+Nt = 30; % # time steps
+dt = 120;
+it = 1:Nt; t = (it-1)*dt; % dt = 120s
+
+
+Nx = 101;dx = L/(Nx-1);ix = 1:Nx;x=(ix-1).*dx;
+Nz = 101;dz = D/(Nz-1);iz = 1:Nz;z =(iz-1).*dz;
+
+wox = (dw)./(1+((x - L/2).^2)./b^2);
+woz = 1./(1+((z - zo).^2)./d^2);
+
+N = 50; %number of modes
+M = 50; %number of modes
+
+for i=1:Nx
+    wox(i) = (dw)./(1+((x(i) - L/2).^2)./b^2);
+end
+for i=1:Nz
+    woz(i) = 1./(1+((z(i) - zo).^2)./d^2);
+end
+
+for i = 1:N
+    Kn(i)=(i-N/2).*pi/L;% define wavenumbers - includes positive and negative wavenumbers
+    
+%         w(i,im) = sqrt((n^2).*(Kn(i).^2))./(m(im).^2 + Kn(i).^2);%frequency
+        inta=sum(wox.*sin(Kn(i).*x).*dx);
+        an(i)=inta.*(2/L)/2; %projection coefficient
+ end
+
+     for im = 1:M
+        m(im) = (im-M/2).*pi/D; 
+        intb = sum(woz.*sin(m(im).*z).*dz);
+        bj(im) = intb.*(2/D)/2;%projection coefficient\
+     end
+     
+for i = 1:N
+    for im = 1:M
+        w(i,im) = ((n^2.*Kn(i).^2)./(m(im).^2 + Kn(i).^2 +1e-9))^.5;
+    end
+end
+
+     
+
+for ix = 1:Nx
+    ix
+    for iz = 1:Nz
+        for tval = 1:Nt
+            
+            summ=0;
+            for im = 1:M
+             summ = summ + sum(an'.*bj(im).*sin(Kn'.*x(ix)).*cos(w(:,im).*t(tval)).*sin(m(im).*z(iz)));
+            end
+            wxzt(iz,ix,tval) = summ;
+
+        end
+    end
+end
+ %%
+for i = 1:Nt
+    contourf(x,z,wxzt(:,:,i)./dw,-1:0.05:1,'LineStyle','none');
+    xlim([1 L]);ylim([0 D]);
+    hold off;
+    fmovie(i) = getframe;
+
+end  
